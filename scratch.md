@@ -63,7 +63,7 @@ Building on this, they'll be more likely to want to contribute back to society,
 likely be better parents (I'm not saying money makes a good parent, but
 not having to struggle as a child would increase psychological well being
 and improved access to resources). They would also be less likely to
-engage in dangerous drug habits. All of these advantages work synergystically,
+engage in dangerous drug habits. All of these advantages work synergistically,
 and they all make society a better place.
 
 I know there are some that think perhaps poverty is a place where the undeserving
@@ -92,5 +92,20 @@ An honest friend may be someone that tells you what you don't want to
 ## If you are a liberal
 
 1. 
+
+
+# Entrepreneurship and Social Democracy
+
+Imagine being able to try out a business idea, without fear of
+not being able to provide for your family and your childrens'
+education. Many people may want to stay with a safe job, even
+if they have more to offer society, and possibly more to
+offer their families as well (though of course, entrepreneurship
+would still likely exact a time penalty - but this too can be
+positive in the case of a family business or setting good
+examples). Universal basic income would provide a general
+safety-net for oneself and the family, and free education
+would also go along way towards not having to worry about saving
+inordinate amounts of cash to send them to a good school.
 
 
