@@ -108,4 +108,23 @@ safety-net for oneself and the family, and free education
 would also go along way towards not having to worry about saving
 inordinate amounts of cash to send them to a good school.
 
+Traditional capitalist views would likely argue, as usual,
+that this isn't a "pick yourself up by the bootstraps" approach,
+and that other taxpayers are paying for your risks. The first
+idea is a catch-phrase that is largely nonsense: if people
+get help, they are going to be more likely to succeed most
+of the time. We're humans, a social species - we're hardwired
+to help each other. The tax subsidies for support programs
+for entrepreneurship wouldn't cost anything beyond what
+would already be in place (ideally). This ability to do
+fearless entrepreneurship is just another benefit that is
+often overlooked when discussing social democracies. And to be
+clear, capitalists are already wealthy and aren't exactly
+looking for more competition to come along and unseat
+their existing strangleholds (though they may often
+discuss the benefits of competition - most would probably
+not want to be hard-pressed to *really* compete themselves),
+so of course many capitalists outside of the investor sphere
+have no real reasons to be excited by this idea. The ultimate
+example would be the monopolist.
 
