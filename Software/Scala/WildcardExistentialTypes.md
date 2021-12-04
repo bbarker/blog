@@ -8,9 +8,9 @@
 ## Background
 
 Recently, I came across a wildcard type in a library we use ([Tapir](https://tapir.softwaremill.com/)).
-Until then, I had viewed wildcard types in Scala as something that could be avoided. Could I
+Until then, I had viewed wildcard types in Scala as something that could always be avoided. Could I
 bypass them here? As it turns out, I could not. In what follows, I hope to show why existential types
-can be useful (and necessary) in Scala, and how they relate to parametric types (also known as
+can be necessary in Scala, and how they relate to parametric types (also known as
 higher-kinded types, or HKTs) and `Any`.
 
 ## Quick Introduction
@@ -51,74 +51,21 @@ val what2: List[? >: Ct <: At] = List(new At {}, new Bt {}, 1)
 
 ```
 
+## The Problem
 
+While refactoring some akka-http code to use Tapir, I had gotten to the point where I was
+nearly ready to wrap up my first collection of routes and endpoints and needed to wire them
+together. I don't want to discuss this further in this post as it is somewhat beside the
+point, but if you are curious, I wrote up a description [here](https://gist.github.com/bbarker/082082c24e1c307d8bc4e58f7717d921).
 
-This works:
+The main issue was that the function I'd written to merge routes needed to take
+endpoints with different input and output types and compose them into a single
+route. At first, I thought the Scala type might automatically widen to a type
+large enough to accommodate these types (such as `Any`),
+but that didn't appear to be the case.
 
-```scala
- def apply[Env](
-    serverEndpoints: List[ServerEndpoint[_, _, _, AkkaStreams & WebSockets, Future]],
-    layer: ULayer[Env],
-    serverOptions: Option[AkkaHttpServerOptions],
-): Route =  serverOptions
-    .fold(ifEmpty = AkkaHttpServerInterpreter())(serverOptions => AkkaHttpServerInterpreter(serverOptions))
-    .toRoute(serverEndpoints)
-```
+Let's look at a simple example:
 
-The call site looks like:
-
-
-```scala
-type Env = Has[BetBoostTokenService[RIOCB]] & Clock & Blocking & Authorization
-
-def serverEndpoints(layer: ULayer[Env]): List[ServerEndpoint[_, _, _, AkkaStreams & WebSockets, Future]] = List(
-  ServerEndpoint(tokensByUniverseAccountDef, (_: MonadError[Future]) => unsafeToFutureHandler(tokensByUniverseAccountHandler, layer)),
-  ServerEndpoint(tokenByUniverseAccountDef, (_: MonadError[Future]) => unsafeToFutureHandler(tokenByUniverseAccountHandler, layer)),
-  ServerEndpoint(
-    refundTokenByUniverseAccountDef,
-    (_: MonadError[Future]) => unsafeToFutureHandler(refundTokenByUniverseAccountHandler, layer),
-  ),
-)
-
-def routes(layer: ULayer[Has[BetBoostTokenService[RIOCB]] & Clock & Blocking & Authorization]): Route = ZioAkkaHttpRoute.applyTest(
-  serverEndpoints(layer),
-  layer,
-  None,
-)
-```
-
-
-However, if we use a polymorphic type:
-
-```scala
-def applyTest[Input, Error, Response, Env]
-```
-
-Or even polymorphic types with bounds:
-
-```scala
-def applyTest[Input >: Nothing <: Any, Error  >: Nothing <: Any, Response >: Nothing <: Any, Env]
-```
-
-We will still get an error at the call site:
-
-```
-Omitted.scala:54:20: type mismatch;
-[error]   List[
-[error]     ServerEndpoint[
-[error]       _$1|Any
-[error]       ,
-[error]       _$2|Any
-[error]       ,
-[error]       _$3|Any
-[error]       ,
-[error]       AkkaStreams with WebSockets
-[error]       ,
-[error]       Future
-[error]     ]
-[error]   ]
-[error]     serverEndpoints(layer),
-```
 
 
 ## References
