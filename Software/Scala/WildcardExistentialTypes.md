@@ -119,3 +119,11 @@ Omitted.scala:54:20: type mismatch;
 [error]   ]
 [error]     serverEndpoints(layer),
 ```
+
+
+## References
+
+### Variance
+
+1. [Zionomicon](https://www.zionomicon.com/), Appendix: Mastering Variance
+2. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
