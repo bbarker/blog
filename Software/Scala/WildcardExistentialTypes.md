@@ -1,10 +1,13 @@
 # Existential Types and Variance in Scala
 
 # TODO
-1. Considering looking into contravariance examples
 2. Test code (at least some) in Scala 2 to see if results hold there
 3. Try Java? Similar reasons for trying Scala 2
 
+If you'd like to follow along with code examples, most examples are in Scala 3
+and [on Scastie](https://scastie.scala-lang.org/bbarker/sXhlCN0rQS6uj72Wds8HTQ/4).
+An example in Scala 2 and Java is linked near the end of the post. That said,
+almost everything here should apply to Scala 2 and Scala 3.
 ## Background
 
 Recently, I came across a wildcard type in a library we use ([Tapir](https://tapir.softwaremill.com/)).
@@ -56,7 +59,8 @@ val what2: List[? >: Ct <: At] = List(new At {}, new Bt {}, 1)
 While refactoring some akka-http code to use Tapir, I had gotten to the point where I was
 nearly ready to wrap up my first collection of routes and endpoints and needed to wire them
 together. I don't want to discuss this here as it is somewhat beside the
-point, but if you are curious, I wrote up a [brief description](https://gist.github.com/bbarker/082082c24e1c307d8bc4e58f7717d921).
+point, but if you are curious, I wrote up a
+[brief description](https://gist.github.com/bbarker/082082c24e1c307d8bc4e58f7717d921).
 
 The main issue was that the function I'd written to merge routes needed to take
 endpoints with different input and output types and compose them into a single
@@ -83,7 +87,7 @@ def      funEx(ss: List[SomeClass[ _ ]]): Unit = ()
 We've managed to define lists of a higher-kinded type using both `Any` and `_`;
 the lists have identical values. We've also defined three not-so-interesting
 functions that each return `Unit`, and in no way do they depend on the types
-(or even values) being passed in: the only difference is how each function
+(or even values) passed in: the only difference is how each function
 approaches dealing with the type parameter of `SomeClass`. Let's try to use them:
 
 ```scala
@@ -106,13 +110,13 @@ each "`_`" in the list may be a different type, and as we'll see, even if they a
 same, Scala has no way of knowing this (without invoking reflection, at least).
 
 In the second case, `funAny` doesn't work for similar reasons - each value of type "`_`"
-may be distinct, but unknown types, which Scala can't assume to be `Any`, and we'll see
+may be of distinct but unknown types, which Scala can't assume to be `Any`, and we'll see
 why a bit later. Finally, we can be relieved that `funEx` will do what we want, as we are
-being explicit with using a wildcard type.
+explicit with using a wildcard type.
 
 ### Example 2
 
-Now let's look at a similar example where issues arise when actually constructing our
+Now let's look at a similar example where issues arise when constructing our
 lists.
 
 ```scala
@@ -138,8 +142,8 @@ val outer1: Outer[Any]= Outer.apply(in1)
 //    Required: Playground.Inner[Any]
 ```
 
-This problem would not arise if *either* or both of `Outer` or `Inner` were declared
-with a covariant type parameter (`+A`) (try it), e.g.:
+This problem would not arise if *either* or both of `Outer` or `Inner` had
+been declared with a covariant type parameter (`+A`) (try it), e.g.:
 
 ```scala
 case class Inner[+A](a: A)
@@ -147,30 +151,134 @@ case class Inner[+A](a: A)
 case class Outer[+A](a: Inner[A])
 ```
 
-If just one of them is declared as invariant, (i.e. `A` instead of `+A`); if we have
-`Inner[+A]`, then `Inner[String] <: Inner[Any]`, for example. Then `Outer[Any]`,
-being invariant, requires an `Inner[Any]` (or since `Inner` is covarinant), any subtype
-of `Any`, which of course is anything at all. If `Inner` were itself invariant, subtypes
+If we have `Inner[+A]`, then `Inner[String] <: Inner[Any]`, for example. Then `Outer[Any]`,
+being invariant, requires an `Inner[Any]` (or since `Inner` is covarinant, its parameter
+can be any subtype of `Any`, which of is anything at all).
+If `Inner` were itself invariant, subtypes
 would not be acceptable, thus the problem when both `Outer` and `Inner` are invariant.
 
 Checking the other alternative, if we have `Outer` covariant (`Outer[+A]`) and `Inner`
-invariant (`Inner[A]`), then if we construct an `Inner[String]`, then construct an
+invariant (`Inner[A]`), then if we construct an `Inner[String]`, and then construct an
 `Outer[Any]` using this inner value, it is perfectly fine, since `String <: Any`.
 
 With that exercise in variance out of the way (and in my experience, it takes a lot of
-variance exercise to really get comfortable with the idea), let's return to what might
+variance exercise to become comfortable with the idea), let's return to what might
 be a niggling question: why was the following OK even when both `Outer` and `Inner`
 are invariant?
 
 ```scala
-val outsFromInsEx:  List[Outer[_]]   = List(in1, in2).map(Outer.apply)
+val outsFromInsEx: List[Outer[_]] = List(in1, in2).map(Outer.apply)
 ```
 
-The wildcard allows us to efectively ignore these variance issues, as they aren't tracked.
-In the next example, we'll look to see if there are any type-safety implications from
+The wildcard allows us to effectively ignore these variance issues, as `_` isn't a
+concrete type. In the next example, we'll see if there are any type-safety implications from
 ignoring variance when using wildcards.
 
+### Example 3
 
+To see what some of the safety implications are, we need to try to do *something*
+with values passed to a function that can accept values of any type.
+Our safe options should be limited to just returning a
+value of an unknown type, so we'll endeavor to try something a little more interesting.
+First, we'll create a new class and a few example values:
+
+```scala
+case class ScalaBean[A](initA: A):
+  private var theA: A = initA
+  def getTheA: A = theA
+  def setTheA(a: A): Unit = {
+    this.theA = a
+  }
+
+val bean1: ScalaBean[Int] = ScalaBean(1)
+val bean2: ScalaBean[String] = ScalaBean("Foo")
+val bean3: ScalaBean[Int] = ScalaBean(2)
+
+// val beanList1: List[ScalaBean[Any]] = List(bean1, bean2, bean3)
+val beanList2: List[ScalaBean[_]] = List(bean1, bean2, bean3)
+val beanList3: List[ScalaBean[Int]] = List(bean1, bean3)
+```
+
+`ScalaBean` is certainly not a great example of good Scala code
+or even good Java code, but it serves our purpose here. Again,
+we don't attempt to construct a `List[ScalaBean[Any]]` for similar
+reasons as from example 2: `ScalaBean[A]` is invariant in `A`, so
+we can't do anything like:
+
+```scala
+val anyBean: ScalaBean[Any] = bean1
+```
+
+Since we do know a fairly specific type for `beanList3`, we can do something with
+its members:
+
+```scala
+println(beanList3.map(_.getTheA))
+beanList3.foreach{bean =>
+  bean.setTheA(bean.getTheA+1)
+}
+println(beanList3.map(_.getTheA))
+```
+
+This yields output showing the incrementation worked as expected:
+
+```
+List(1, 2)
+List(2, 3)
+```
+
+If we were instead dealing with a `List[ScalaBean[Any]]` or a `List[ScalaBean[_]]` it
+would be clear that we couldn't even try to do something like this since `+` isn't
+defined on `Any` or on unknown types. But we could still try to set values. Let's
+try making such a function:
+
+```scala
+def polySetAllBeansTo[A](beanList: List[ScalaBean[A]], initBean: ScalaBean[A]): Unit =
+  beanList.foreach{bean =>
+    bean.setTheA(initBean.getTheA)
+  }
+
+polySetAllBeansTo(beanList3, bean1)
+// everything is now set to bean1's value
+
+println(beanList2.map(_.getTheA))
+polySetAllBeansTo(beanList2, bean1)
+// ❌ Found:    (Playground.beanList2 : List[Playground.ScalaBean[?]])
+//    Required: List[Playground.ScalaBean[Int]]
+println(beanList2.map(_.getTheA))
+```
+
+Scala catches this sleight of hand and doesn't allow us to do anything potentially
+nasty here. But what if we use wildcard types in our function instead of polymorphic types?
+Scala won't even let us try it (good!):
+
+
+```scala
+def exSetAllBeansToFirst(beanList: List[ScalaBean[_]]): Unit =
+  val firstBean = beanList.head // bad
+  beanList.foreach{bean =>
+    bean.setTheA(firstBean.getTheA)
+    // ❌ Found:    firstBean.A
+    //    Required: bean.A
+  }
+```
+
+OK, but let's try and be slightly more clever and use an element contained in the list:
+
+```scala
+def exSetAllBeansTo(beanList: List[ScalaBean[_]], initBean: ScalaBean[_]): Unit =
+  beanList.foreach{bean =>
+    bean.setTheA(initBean.getTheA)
+    // ❌ Found:    initBean.A
+    //    Required: bean.A
+  }
+```
+
+We can't do that either. Safety is preserver, hooray!
+
+
+There are probably some interesting cases not covered here, particularly related to contravariance,
+which may be the subject of a future blog post.
 
 ## References
 
