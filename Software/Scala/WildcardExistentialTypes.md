@@ -66,6 +66,43 @@ but that didn't appear to be the case.
 
 Let's look at a simple example:
 
+### Example 1
+
+```scala
+case class SomeClass[A](a: A)
+
+val someStuffAny: List[SomeClass[Any]] = List(SomeClass("foo"), SomeClass(1))
+
+val someStuffEx: List[SomeClass[_]] = List(SomeClass("foo"), SomeClass(1))
+
+def funPoly[A](ss: List[SomeClass[ A ]]): Unit = ()
+def     funAny(ss: List[SomeClass[Any]]): Unit = ()
+def      funEx(ss: List[SomeClass[ _ ]]): Unit = ()
+
+
+// These don't work, but why?
+val u1 = funPoly(someStuffEx)
+val u2 = funAny(someStuffEx)
+
+// This works fine
+val u3 =  funEx(someStuffEx)
+```
+
+
+### Example 2
+
+```scala
+case class Inner[A](a: A)
+case class Outer[A](a: Inner[A])
+
+val in1 = Inner("foo")
+val in2 = Inner(3)
+
+// Doesn't work as expected due to invariance of type paramemters A
+val outsFromInsAny: List[Outer[Any]] = List(in1, in2).map(Outer)
+val outsFromInsEx:  List[Outer[_]]   = List(in1, in2).map(Outer.apply)
+```
+
 
 
 ## References
