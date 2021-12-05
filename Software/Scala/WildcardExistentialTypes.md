@@ -27,7 +27,7 @@ val anythings1: List[Any] = List("foo", 3.14, new java.lang.Object)
 val anythings2: List[_]   = List("foo", 3.14, new java.lang.Object)
 ```
 
-However, unlike `Any`, `_` acts like a type variable: we can constrain it:
+However, unlike `Any`, `_` acts like a type variable; we can constrain it:
 
 ```scala
 trait At
@@ -82,7 +82,12 @@ def      funEx(ss: List[SomeClass[ _ ]]): Unit = ()
 
 // These don't work, but why?
 val u1 = funPoly(someStuffEx)
+// ❌ Found:    (Playground.someStuffEx : List[Playground.SomeClass[?]])
+//    Required: List[Playground.SomeClass[A]]
+//    where:    A is a type variable
 val u2 = funAny(someStuffEx)
+// ❌ Found:    (Playground.someStuffEx : List[Playground.SomeClass[?]])
+//    Required: List[Playground.SomeClass[Any]]
 
 // This works fine
 val u3 =  funEx(someStuffEx)
@@ -100,6 +105,9 @@ val in2 = Inner(3)
 
 // Doesn't work as expected due to invariance of type paramemters A
 val outsFromInsAny: List[Outer[Any]] = List(in1, in2).map(Outer)
+// ❌ Found:    Playground.Inner[?1.CAP]
+//    Required: Playground.Inner[Any]
+//    where:    ?1 is an unknown value of type scala.runtime.TypeBox[String & Int, String | Int]
 val outsFromInsEx:  List[Outer[_]]   = List(in1, in2).map(Outer.apply)
 ```
 
