@@ -137,7 +137,7 @@ val outsFromInsEx:  List[Outer[_]]   = List(in1, in2).map(Outer.apply)
 To see what is going wrong in `outsFromInsAny`, we can look at a simpler problem:
 
 ```scala
-val outer1: Outer[Any]= Outer.apply(in1)
+val outer1: Outer[Any] = Outer.apply(in1)
 // ❌ Found:    (Playground.in1 : Playground.Inner[String])
 //    Required: Playground.Inner[Any]
 ```
