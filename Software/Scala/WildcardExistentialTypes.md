@@ -1,17 +1,28 @@
 # Existential Types and Variance in Scala
 
-# TODO
-2. Test code (at least some) in Scala 2 to see if results hold there
-3. Try Java? Similar reasons for trying Scala 2
-
 If you'd like to follow along with code examples, most examples are in Scala 3
 and [on Scastie](https://scastie.scala-lang.org/bbarker/sXhlCN0rQS6uj72Wds8HTQ/4).
-An example in Scala 2 and Java is linked near the end of the post. That said,
-almost everything here should apply to Scala 2 and Scala 3.
+I will provide an example for Scala 2 and Java near the end of the post. That said,
+almost everything here should apply to Scala 2 and Scala 3, but there is an interesting
+difference between Scala and Java.
+
+## A Note on Variance
+
+This blog post is not an introduction to variance, but several [good references](#Variance) are available,
+and I provide some explanation of variance as it pertains to our examples.
+
+John von Neumann [is quoted](https://en.wikiquote.org/wiki/John_von_Neumann) as saying:
+
+> ... in mathematics you don't understand things. You just get used to them.
+
+I feel like this applies particularly well to variance. Scala making variance more
+explicit than any other language (that I'm aware of) forces us to think of these issues
+when we are designing and using libraries at compile time rather than at runtime.
+
 ## Background
 
 Recently, I came across a wildcard type in a library we use ([Tapir](https://tapir.softwaremill.com/)).
-Until then, I had viewed wildcard types in Scala as something that could always be avoided. Could I
+Until then, I had viewed wildcard types in Scala as something that could be avoided. Could I
 bypass them here? As it turns out, I could not. In what follows, I hope to show why existential types
 can be necessary in Scala, and how they relate to parametric types (also known as
 higher-kinded types, or HKTs) and `Any`.
@@ -167,8 +178,8 @@ a list of values that are invariant in their type parameter:
 val someStuffAny: List[SomeClass[Any]] = List(SomeClass("foo"), SomeClass(1))
 ```
 
-This is due to type inference: since we ask for a `List[SomeClass[Any]]`, and
-we weren't explicit with the type of the values, Scal was able to infer each
+This is due to type inference: since we ask for a `List[SomeClass[Any]]` and
+we weren't explicit with the type of the values, Scala was able to infer each
 inner value (`"foo"` and `1`) to be of type `Any`. If we explicitly ascribe
 more precise types for each value, then we run into the same kind of error:
 
@@ -315,9 +326,28 @@ def exSetAllBeansToFirst(beanList: List[ScalaBean[_]]): Unit =
   }
 ```
 
-We can't do that either. Safety is preserver, hooray! This example has the same result
-[in Scala 2](https://scastie.scala-lang.org/bbarker/EU5MnKcoTauG2KSD1UQ6nA/13)
+We can't do that either. This example has the same result
+[in Scala 2](https://scastie.scala-lang.org/bbarker/EU5MnKcoTauG2KSD1UQ6nA/13), though in
+Java there is one difference that relates to the fact that Java (unlike Scala) does
+not support declaration-site variance (i.e., you can't specify `+A` or `-A` in your type
+definitions):
 
+```java
+ArrayList<JavaBean<Object>> beanList1 = new ArrayList(Arrays.asList(bean1, bean2, bean3));
+
+public <A> void polySetAllBeansToFirst(List<JavaBean<A>> beanList) {
+  beanList.forEach((bean) -> bean.setTheA(beanList.get(0).getTheA()));
+}
+
+polySetAllBeansToFirst(beanList1);
+// ^ We can't do this in Scala, because we can't even construct beanList1
+```
+
+In this case, there is nothing unsafe in itself and may even feel more convenient than in
+Scala. However, there are other cases where the lack of declaration-site variance can
+[cause issues](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc).
+The complete example in Java is available interactively [on JDoodle](jdoodle.com/a/4aHU)
+(also as a [gist backup](https://gist.github.com/bbarker/c2cfcf176c1fcdcffbb68c001fe44fa2)).
 
 There are probably some interesting cases not covered here, particularly related to contravariance,
 which may be the subject of a future blog post.
@@ -326,17 +356,29 @@ which may be the subject of a future blog post.
 
 We've seen that wildcard (existential types) allow us to create collections of elements of
 various types, even when we can't employ the `Any` type due to nested invariance
-constraints or previosly ascribed types (such as from third party libraries). We also saw that
-since Java doesn't employ declaration-site variance, we can directly create a list of
-`Foo<Object>` values without needing to working about the variance constraints. However,
-it is worth noting that the lack of declaration-site variance
-[can cause runtime errors in Java](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc)
+constraints or previously ascribed types (such as from third-party libraries). We also saw that
+since Java doesn't employ declaration-site variance; we can directly create a list of
+`Foo<Object>` values without worrying about the variance constraints, but the lack of
+declaration-site variance
+[can cause runtime errors in Java](https://stackoverflow.com/questions/28570877/java-covariant-array-bad)
 if the users don't properly employ use-site variance.
+
+Hopefully, the examples here proved helpful - I encourage anyone working with Scala or other
+languages where variance comes up to keep reading and experimenting.
+Feel free to comment here if you have questions or suggestions, or you can
+[find me on Twitter](https://twitter.com/b_barker) where you can ask me anything.
 
 ## References
 
 ### Variance
 
-1. [A Complete Guide to Variance in Java and Scala](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc)
-2. [Zionomicon](https://www.zionomicon.com/), Appendix: Mastering Variance
-3. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
+1. [A Complete Guide to Variance in Java and Scala](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc);
+  also touches on existential types.
+2. [About Variance](https://contramap.dev/posts/2020-02-12-variance/)
+3. [Zionomicon](https://www.zionomicon.com/), Appendix: Mastering Variance.
+4. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
+
+### Wildcards and Existential Types
+
+1. [Wildcard Arguments in Types](https://docs.scala-lang.org/scala3/reference/changed-features/wildcards.html) - Scala 3 Language Reference.
+2. [Dropped: Existential Types](https://docs.scala-lang.org/scala3/reference/dropped-features/existential-types.html) - Scala 3 Language Reference.
