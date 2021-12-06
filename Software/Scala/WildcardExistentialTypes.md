@@ -76,8 +76,7 @@ Let's look at a simple example:
 case class SomeClass[A](a: A)
 
 val someStuffAny: List[SomeClass[Any]] = List(SomeClass("foo"), SomeClass(1))
-
-val someStuffEx: List[SomeClass[_]] = List(SomeClass("foo"), SomeClass(1))
+val someStuffEx: List[SomeClass[_]]    = List(SomeClass("foo"), SomeClass(1))
 
 def funPoly[A](ss: List[SomeClass[ A ]]): Unit = ()
 def     funAny(ss: List[SomeClass[Any]]): Unit = ()
@@ -152,14 +151,57 @@ case class Outer[+A](a: Inner[A])
 ```
 
 If we have `Inner[+A]`, then `Inner[String] <: Inner[Any]`, for example. Then `Outer[Any]`,
-being invariant, requires an `Inner[Any]` (or since `Inner` is covarinant, its parameter
-can be any subtype of `Any`, which of is anything at all).
+being invariant, requires an `Inner[Any]` (or since `Inner` is covariant, its parameter
+can be any subtype of `Any`, which is anything at all).
 If `Inner` were itself invariant, subtypes
 would not be acceptable, thus the problem when both `Outer` and `Inner` are invariant.
 
 Checking the other alternative, if we have `Outer` covariant (`Outer[+A]`) and `Inner`
 invariant (`Inner[A]`), then if we construct an `Inner[String]`, and then construct an
 `Outer[Any]` using this inner value, it is perfectly fine, since `String <: Any`.
+
+At this point, you may think back to example 1, and wonder why we could construct
+a list of values that are invariant in their type parameter:
+
+```scala
+val someStuffAny: List[SomeClass[Any]] = List(SomeClass("foo"), SomeClass(1))
+```
+
+This is due to type inference: since we ask for a `List[SomeClass[Any]]`, and
+we weren't explicit with the type of the values, Scal was able to infer each
+inner value (`"foo"` and `1`) to be of type `Any`. If we explicitly ascribe
+more precise types for each value, then we run into the same kind of error:
+
+```scala
+val someStuffAny2: List[SomeClass[Any]] =
+  List(SomeClass("foo"): SomeClass[String], SomeClass(1): SomeClass[Int])
+// ❌ Found:    Playground.SomeClass[Int]
+//    Required: Playground.SomeClass[Any]
+// ❌ Found:    Playground.SomeClass[String]
+//    Required: Playground.SomeClass[Any]
+```
+
+This implies that what we actually have is a type inference problem.
+If we explicity type the list values, then we can create our list of `Any`s:
+
+```scala
+val in1any: Inner[Any] = Inner("foo")
+val in2any: Inner[Any] = Inner(3)
+
+val outsFromInsAny2: List[Outer[Any]] = List(in1any, in2any).map(Outer.apply)
+```
+
+In this case, though, it would have just been easier to use the wildcard type,
+and certainly we don't always have the luxury of re-ascribing types to values
+of invariant types. Imagine they were created in a third party library we don't
+control. We can emulate this behavior here:
+
+```scala
+val in1any2: Inner[Any] = (Inner("foo"): Inner[String])
+
+// ❌ Found:    Playground.Inner[String]
+//    Required: Playground.Inner[Any]
+```
 
 With that exercise in variance out of the way (and in my experience, it takes a lot of
 variance exercise to become comfortable with the idea), let's return to what might
@@ -252,19 +294,6 @@ Scala catches this sleight of hand and doesn't allow us to do anything potential
 nasty here. But what if we use wildcard types in our function instead of polymorphic types?
 Scala won't even let us try it (good!):
 
-
-```scala
-def exSetAllBeansToFirst(beanList: List[ScalaBean[_]]): Unit =
-  val firstBean = beanList.head // bad
-  beanList.foreach{bean =>
-    bean.setTheA(firstBean.getTheA)
-    // ❌ Found:    firstBean.A
-    //    Required: bean.A
-  }
-```
-
-OK, but let's try and be slightly more clever and use an element contained in the list:
-
 ```scala
 def exSetAllBeansTo(beanList: List[ScalaBean[_]], initBean: ScalaBean[_]): Unit =
   beanList.foreach{bean =>
@@ -274,15 +303,40 @@ def exSetAllBeansTo(beanList: List[ScalaBean[_]], initBean: ScalaBean[_]): Unit 
   }
 ```
 
-We can't do that either. Safety is preserver, hooray!
+OK, but let's try and be slightly more clever and use an element contained in the list:
+
+```scala
+def exSetAllBeansToFirst(beanList: List[ScalaBean[_]]): Unit =
+  val firstBean = beanList.head // bad: don't use head if the list may be empty
+  beanList.foreach{bean =>
+    bean.setTheA(firstBean.getTheA)
+    // ❌ Found:    firstBean.A
+    //    Required: bean.A
+  }
+```
+
+We can't do that either. Safety is preserver, hooray! This example has the same result
+[in Scala 2](https://scastie.scala-lang.org/bbarker/EU5MnKcoTauG2KSD1UQ6nA/13)
 
 
 There are probably some interesting cases not covered here, particularly related to contravariance,
 which may be the subject of a future blog post.
 
+## Conclusions
+
+We've seen that wildcard (existential types) allow us to create collections of elements of
+various types, even when we can't employ the `Any` type due to nested invariance
+constraints or previosly ascribed types (such as from third party libraries). We also saw that
+since Java doesn't employ declaration-site variance, we can directly create a list of
+`Foo<Object>` values without needing to working about the variance constraints. However,
+it is worth noting that the lack of declaration-site variance
+[can cause runtime errors in Java](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc)
+if the users don't properly employ use-site variance.
+
 ## References
 
 ### Variance
 
-1. [Zionomicon](https://www.zionomicon.com/), Appendix: Mastering Variance
-2. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
+1. [A Complete Guide to Variance in Java and Scala](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc)
+2. [Zionomicon](https://www.zionomicon.com/), Appendix: Mastering Variance
+3. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
