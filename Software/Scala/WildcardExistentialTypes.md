@@ -1,7 +1,7 @@
 # Existential Types and Variance in Scala
 
 If you'd like to follow along with code examples, most examples are in Scala 3
-and [on Scastie](https://scastie.scala-lang.org/bbarker/sXhlCN0rQS6uj72Wds8HTQ/8).
+and [on Scastie](https://scastie.scala-lang.org/bbarker/sXhlCN0rQS6uj72Wds8HTQ/10).
 I will provide an example for Scala 2 and Java near the end of the post. That said,
 almost everything here should apply to Scala 2 and Scala 3, but there is an interesting
 difference between Scala and Java.
@@ -34,14 +34,14 @@ they are the [only form](https://docs.scala-lang.org/scala3/reference/dropped-fe
 of existential types. Also note, the syntax for wildcards [has changed](https://docs.scala-lang.org/scala3/reference/changed-features/wildcards.html
 ) from `_` in Scala 2 to `?` in Scala 3.
 
-In Scala, in the simplest form, wilcards look similar in usage to `Any`, but using `_`:
+In Scala, in their simplest form, wilcards look similar in usage to `Any`, but using `?`:
 
 ```scala
 val anythings1: List[Any] = List("foo", 3.14, new java.lang.Object)
-val anythings2: List[_]   = List("foo", 3.14, new java.lang.Object)
+val anythings2: List[?]   = List("foo", 3.14, new java.lang.Object)
 ```
 
-However, unlike `Any`, `_` acts like a type variable; we can constrain it:
+However, unlike `Any`, `?` acts as a type variable; we can constrain it:
 
 ```scala
 trait At
@@ -87,14 +87,14 @@ Let's look at a simple example:
 case class SomeClass[A](a: A)
 
 val someStuffAny: List[SomeClass[Any]] = List(SomeClass("foo"), SomeClass(1))
-val someStuffEx:  List[SomeClass[_]]   = List(SomeClass("foo"), SomeClass(1))
+val someStuffEx:  List[SomeClass[?]]   = List(SomeClass("foo"), SomeClass(1))
 
 def funPoly[A](ss: List[SomeClass[ A ]]): Unit = ()
 def     funAny(ss: List[SomeClass[Any]]): Unit = ()
-def      funEx(ss: List[SomeClass[ _ ]]): Unit = ()
+def      funEx(ss: List[SomeClass[ ? ]]): Unit = ()
 ```
 
-We've managed to define lists of a higher-kinded type using both `Any` and `_`;
+We've managed to define lists of a higher-kinded type using both `Any` and `?`;
 the lists have identical values. We've also defined three not-so-interesting
 functions that each return `Unit`, and in no way do they depend on the types
 (or even values) passed in: the only difference is how each function
@@ -115,12 +115,13 @@ val u3 =  funEx(someStuffEx)
 ```
 
 In the first case, `funPoly` doesn't work, apparently because we required a list of
-`SomeClass[A]`. In Scala, `_` does not automatically widen to a common supertype;
-each "`_`" in the list may be a different type, and as we'll see, even if they are the
+`SomeClass[A]`. In Scala, `?` does not automatically widen to a common supertype;
+each "`?`" in the list may be a different type, and as we'll see, even if they are the
 same, Scala has no way of knowing this (without invoking reflection, at least).
 
-In the second case, `funAny` doesn't work for similar reasons - each value of type "`_`"
-may be of distinct but unknown types, which Scala can't assume to be `Any`, and we'll see
+In the second case, `funAny` doesn't work for similar reasons - each value of type "`?`"
+(again, "`?`" is not a real time) may be of distinct but unknown types,
+which Scala can't assume to be `Any`, and we'll see
 why a bit later. Finally, we can be relieved that `funEx` will do what we want, as we are
 explicit with using a wildcard type.
 
@@ -141,7 +142,7 @@ val outsFromInsAny: List[Outer[Any]] = List(in1, in2).map(Outer.apply)
 // ❌ Found:    Playground.Inner[?1.CAP]
 //    Required: Playground.Inner[Any]
 //    where:    ?1 is an unknown value of type scala.runtime.TypeBox[String & Int, String | Int]
-val outsFromInsEx:  List[Outer[_]]   = List(in1, in2).map(Outer.apply)
+val outsFromInsEx:  List[Outer[?]]   = List(in1, in2).map(Outer.apply)
 ```
 
 To see what is going wrong in `outsFromInsAny`, we can look at a simpler problem:
@@ -192,7 +193,7 @@ val someStuffAny2: List[SomeClass[Any]] =
 //    Required: Playground.SomeClass[Any]
 ```
 
-This implies that what we actually have is a type inference problem.
+This implies that what we have is a type inference problem.
 If we explicity type the list values, then we can create our list of `Any`s:
 
 ```scala
@@ -203,9 +204,9 @@ val outsFromInsAny2: List[Outer[Any]] = List(in1any, in2any).map(Outer.apply)
 ```
 
 In this case, though, it would have just been easier to use the wildcard type,
-and certainly we don't always have the luxury of re-ascribing types to values
-of invariant types. Imagine they were created in a third party library we don't
-control. We can emulate this behavior here:
+and certainly, we don't always have the luxury of re-ascribing types to values
+of invariant types. Imagine if the values were from a third-party library we don't
+control. We can emulate such behavior here:
 
 ```scala
 val in1any2: Inner[Any] = (Inner("foo"): Inner[String])
@@ -220,12 +221,12 @@ be a niggling question: why was the following OK even when both `Outer` and `Inn
 are invariant?
 
 ```scala
-val outsFromInsEx: List[Outer[_]] = List(in1, in2).map(Outer.apply)
+val outsFromInsEx: List[Outer[?]] = List(in1, in2).map(Outer.apply)
 ```
 
-The wildcard allows us to effectively ignore these variance issues, as `_` isn't a
-concrete type. In the next example, we'll see if there are any type-safety implications from
-ignoring variance when using wildcards.
+The wildcard allows us to effectively ignore these variance issues, as `?` isn't a
+concrete type. In the following example, we'll learn how type-safety can be
+affected when ignoring variance through the use of wildcards.
 
 ### Example 3
 
@@ -248,7 +249,7 @@ val bean2: ScalaBean[String] = ScalaBean("Foo")
 val bean3: ScalaBean[Int] = ScalaBean(2)
 
 // val beanList1: List[ScalaBean[Any]] = List(bean1, bean2, bean3)
-val beanList2: List[ScalaBean[_]] = List(bean1, bean2, bean3)
+val beanList2: List[ScalaBean[?]] = List(bean1, bean2, bean3)
 val beanList3: List[ScalaBean[Int]] = List(bean1, bean3)
 ```
 
@@ -280,7 +281,7 @@ List(1, 2)
 List(2, 3)
 ```
 
-If we were instead dealing with a `List[ScalaBean[Any]]` or a `List[ScalaBean[_]]` it
+If we were instead dealing with a `List[ScalaBean[Any]]` or a `List[ScalaBean[?]]` it
 would be clear that we couldn't even try to do something like this since `+` isn't
 defined on `Any` or on unknown types. But we could still try to set values. Let's
 try making such a function:
@@ -306,7 +307,7 @@ nasty here. But what if we use wildcard types in our function instead of polymor
 Scala won't even let us try it (good!):
 
 ```scala
-def exSetAllBeansTo(beanList: List[ScalaBean[_]], initBean: ScalaBean[_]): Unit =
+def exSetAllBeansTo(beanList: List[ScalaBean[?]], initBean: ScalaBean[?]): Unit =
   beanList.foreach{bean =>
     bean.setTheA(initBean.getTheA)
     // ❌ Found:    initBean.A
@@ -317,7 +318,7 @@ def exSetAllBeansTo(beanList: List[ScalaBean[_]], initBean: ScalaBean[_]): Unit 
 OK, but let's try and be slightly more clever and use an element contained in the list:
 
 ```scala
-def exSetAllBeansToFirst(beanList: List[ScalaBean[_]]): Unit =
+def exSetAllBeansToFirst(beanList: List[ScalaBean[?]]): Unit =
   val firstBean = beanList.head // bad: don't use head if the list may be empty
   beanList.foreach{bean =>
     bean.setTheA(firstBean.getTheA)
@@ -361,7 +362,7 @@ since Java doesn't employ declaration-site variance; we can directly create a li
 `Foo<Object>` values without worrying about the variance constraints, but the lack of
 declaration-site variance
 [can cause runtime errors in Java](https://stackoverflow.com/questions/28570877/java-covariant-array-bad)
-if the users don't properly employ use-site variance.
+if the users don't *properly* employ use-site variance.
 
 Hopefully, the examples here proved helpful - I encourage anyone working with Scala or other
 languages where variance comes up to keep reading and experimenting.
