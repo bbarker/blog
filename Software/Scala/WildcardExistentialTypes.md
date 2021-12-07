@@ -1,7 +1,7 @@
 # Existential Types and Variance in Scala
 
 If you'd like to follow along with code examples, most examples are in Scala 3
-and [on Scastie](https://scastie.scala-lang.org/bbarker/sXhlCN0rQS6uj72Wds8HTQ/4).
+and [on Scastie](https://scastie.scala-lang.org/bbarker/sXhlCN0rQS6uj72Wds8HTQ/8).
 I will provide an example for Scala 2 and Java near the end of the post. That said,
 almost everything here should apply to Scala 2 and Scala 3, but there is an interesting
 difference between Scala and Java.
@@ -87,7 +87,7 @@ Let's look at a simple example:
 case class SomeClass[A](a: A)
 
 val someStuffAny: List[SomeClass[Any]] = List(SomeClass("foo"), SomeClass(1))
-val someStuffEx: List[SomeClass[_]]    = List(SomeClass("foo"), SomeClass(1))
+val someStuffEx:  List[SomeClass[_]]   = List(SomeClass("foo"), SomeClass(1))
 
 def funPoly[A](ss: List[SomeClass[ A ]]): Unit = ()
 def     funAny(ss: List[SomeClass[Any]]): Unit = ()
