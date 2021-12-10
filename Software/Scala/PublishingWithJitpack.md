@@ -1,6 +1,6 @@
 
-Recently while complaining to a friend about my past experiences publishing
-JVM artifacts, he introduced me to [Jitpack](https://jitpack.io/),
+Recently, while discussing my non-idealic past experiences of publishing
+JVM artifacts, a friend introduced me to [Jitpack](https://jitpack.io/),
 which integrates nicely
 with GitHub repositories and in principle makes the publishing process
 much closer to what we would like, and is much simpler.
@@ -64,9 +64,20 @@ the usual way, in this case (it is a test dependency, otherwise you would omit `
 "io.github.bbarker" %% "zio-diffx" % "0.0.4" % Test
 ```
 
+Make sure jitpack is in your resolvers, e.g.:
 
-Now after running `reload` and `test:compile` in `sbt`, jitpack will kick off the artifact build. This takes some additional time when the dependency
-is being built, but this only happens once per version. Now when I visit `https://jitpack.io/io/github/bbarker/zio-diffx_2.13/0.0.4/` I can see
+```scala
+  resolvers ++= Seq(
+    "jitpack.io" at "https://jitpack.io/",
+  ),
+```
+
+Then, after running `reload` and `test:compile` in `sbt`, jitpack will kick off the artifact build.
+This takes some additional time while the dependency is being built,
+but this only happens once per version (once, it seemed I needed to go to https://jitpack.io,
+lookup my package and desired version, and click on "Get it" in order to kick things off,
+but that could be a coincidence of timing).
+Now when I visit `https://jitpack.io/io/github/bbarker/zio-diffx_2.13/0.0.4/` I can see
 the results of the build:
 
 ```
