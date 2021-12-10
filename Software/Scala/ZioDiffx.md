@@ -8,8 +8,6 @@ project.
 
 ### Dependency Coordinates
 
-Make sure jitpack is in your resolvers:
-
 Make sure jitpack is in your resolvers, e.g.:
 
 ```scala
