@@ -194,7 +194,7 @@ val someStuffAny2: List[SomeClass[Any]] =
 ```
 
 This implies that what we have is a type inference problem.
-If we explicity type the list values, then we can create our list of `Any`s:
+If we explicitly type the list values, then we can create our list of `Any`s:
 
 ```scala
 val in1any: Inner[Any] = Inner("foo")
@@ -206,7 +206,15 @@ val outsFromInsAny2: List[Outer[Any]] = List(in1any, in2any).map(Outer.apply)
 In this case, though, it would have just been easier to use the wildcard type,
 and certainly, we don't always have the luxury of re-ascribing types to values
 of invariant types. Imagine if the values were from a third-party library we don't
-control. We can emulate such behavior here:
+control (such as the standard library, where mutable collections are a great
+example of [types requiring invariance](https://alvinalexander.com/scala/how-why-make-mutable-collections-invariant-in-scala/)).
+Since a mutable collection can both accept values (contravariant position)
+and emit values (covariant position), it must be invariant.
+If this sounds like unfamiliar territory, I encourage reading some of the
+[variance references](#Variance), which have better examples and
+explanations to demonstrate the use of variance.
+In the context of our example, we can emulate the behavior of a library where
+the types have already been inferred, by adding an explicit type annotation:
 
 ```scala
 val in1any2: Inner[Any] = (Inner("foo"): Inner[String])
@@ -347,7 +355,7 @@ polySetAllBeansToFirst(beanList1);
 In this case, there is nothing unsafe in itself and may even feel more convenient than in
 Scala. However, there are other cases where the lack of declaration-site variance can
 [cause issues](https://medium.com/javarevisited/variance-in-java-and-scala-63af925d21dc).
-The complete example in Java is available interactively [on JDoodle](jdoodle.com/a/4aHU)
+The complete example in Java is available interactively [on JDoodle](https://jdoodle.com/ia/kZ3)
 (also as a [gist backup](https://gist.github.com/bbarker/c2cfcf176c1fcdcffbb68c001fe44fa2)).
 
 There are probably some interesting cases not covered here, particularly related to contravariance,
@@ -378,9 +386,9 @@ Feel free to comment here if you have questions or suggestions, or you can
 
 ## Thanks
 
-Thanks to [Nigel Benns](https://twitter.com/polaris_s0i) for reading a draft
-and offering extremely helpful comments in improving the quality of this post,
-and Matthias Berndt for answering
+Thanks to [Nigel Benns](https://twitter.com/polaris_s0i) and [Aly](https://twitter.com/Fish_CTO)
+for reading a draft and providing feedback that improved
+the quality of this post, and Matthias Berndt for answering
 [the question](https://stackoverflow.com/questions/70193216/why-cant-a-polymorphic-function-accept-wildcard-existential-types-in-scala)
 that was the inspiration for this post.
 
@@ -395,6 +403,8 @@ that was the inspiration for this post.
 4. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
 5. [SO question inspiring this post](https://stackoverflow.com/questions/70193216/why-cant-a-polymorphic-function-accept-wildcard-existential-types-in-scala),
   where the key insight was pointed out to me by Matthias Berndt.
+6. [TypeScript GitHub Issue on Function Variance](https://github.com/microsoft/TypeScript/issues/3651) Demonstrates how the wrong choices for
+  variance in functions can cause a compiler to have runtime errors.
 
 ### Wildcards and Existential Types
 
