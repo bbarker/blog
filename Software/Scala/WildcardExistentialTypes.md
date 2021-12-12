@@ -376,6 +376,14 @@ languages where variance comes up to keep reading and experimenting.
 Feel free to comment here if you have questions or suggestions, or you can
 [find me on Twitter](https://twitter.com/b_barker) where you can ask me anything.
 
+## Thanks
+
+Thanks to [Nigel Benns](https://twitter.com/polaris_s0i) for reading a draft
+and offering extremely helpful comments in improving the quality of this post,
+and Matthias Berndt for answering
+[the question](https://stackoverflow.com/questions/70193216/why-cant-a-polymorphic-function-accept-wildcard-existential-types-in-scala)
+that was the inspiration for this post.
+
 ## References
 
 ### Variance
