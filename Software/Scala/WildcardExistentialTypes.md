@@ -17,7 +17,7 @@ John von Neumann [is quoted](https://en.wikiquote.org/wiki/John_von_Neumann) as 
 
 I feel like this applies particularly well to variance. Scala making variance more
 explicit than any other language (that I'm aware of) forces us to think of these issues
-when we are designing and using libraries at compile time rather than at runtime.
+when we are designing and using libraries at compile time rather than runtime.
 
 ## Background
 
@@ -120,7 +120,7 @@ each "`?`" in the list may be a different type, and as we'll see, even if they a
 same, Scala has no way of knowing this (without invoking reflection, at least).
 
 In the second case, `funAny` doesn't work for similar reasons - each value of type "`?`"
-(again, "`?`" is not a real time) may be of distinct but unknown types,
+(again, "`?`" is not a real type) may be of distinct but unknown types,
 which Scala can't assume to be `Any`, and we'll see
 why a bit later. Finally, we can be relieved that `funEx` will do what we want, as we are
 explicit with using a wildcard type.
@@ -357,12 +357,19 @@ which may be the subject of a future blog post.
 
 We've seen that wildcard (existential types) allow us to create collections of elements of
 various types, even when we can't employ the `Any` type due to nested invariance
-constraints or previously ascribed types (such as from third-party libraries). We also saw that
-since Java doesn't employ declaration-site variance; we can directly create a list of
+constraints or previously ascribed types (such as from third-party libraries).
+When using wildcards, Scala and Java prevent us from accessing values that would have the wildcard
+type in their signature, at least directly (see [Example 3](#example-3)). This makes sense,
+as we can't talk about a type in any meaningful way when we don't know what it is.
+We also saw that since Java doesn't employ declaration-site variance, we can directly create a list of
 `Foo<Object>` values without worrying about the variance constraints, but the lack of
 declaration-site variance
 [can cause runtime errors in Java](https://stackoverflow.com/questions/28570877/java-covariant-array-bad)
-if the users don't *properly* employ use-site variance.
+if the users don't *properly* employ use-site variance; the burden of variance in Scala
+is on the API designer, but in Java, it is on the user of the API. Proper variance declarations
+allow us to be more precise, and if properly used, wildcards can usually be avoided.
+On the other hand, wildcards allow us to ignore variance, but at the cost of not being able
+to refer to values of the wildcard types in any way.
 
 Hopefully, the examples here proved helpful - I encourage anyone working with Scala or other
 languages where variance comes up to keep reading and experimenting.
@@ -378,8 +385,11 @@ Feel free to comment here if you have questions or suggestions, or you can
 2. [About Variance](https://contramap.dev/posts/2020-02-12-variance/)
 3. [Zionomicon](https://www.zionomicon.com/), Appendix: Mastering Variance.
 4. [Understanding Covariance and Contravariance](https://blog.kaizen-solutions.io/2020/variance-in-scala/)
+5. [SO question inspiring this post](https://stackoverflow.com/questions/70193216/why-cant-a-polymorphic-function-accept-wildcard-existential-types-in-scala),
+  where the key insight was pointed out to me by Matthias Berndt.
 
 ### Wildcards and Existential Types
 
 1. [Wildcard Arguments in Types](https://docs.scala-lang.org/scala3/reference/changed-features/wildcards.html) - Scala 3 Language Reference.
 2. [Dropped: Existential Types](https://docs.scala-lang.org/scala3/reference/dropped-features/existential-types.html) - Scala 3 Language Reference.
+3. [scala - Any vs underscore in generics](https://stackoverflow.com/a/15204140/3096687)
