@@ -1,29 +1,67 @@
+# Publishing JVM artifacts quickly with JitPack
+## Git packed with JitPack
 
-Recently, while discussing my non-idealic past experiences of publishing
-JVM artifacts, a friend introduced me to [Jitpack](https://jitpack.io/),
-which integrates nicely
-with GitHub repositories and in principle makes the publishing process
-much closer to what we would like, and is much simpler.
-
+Recently, while discussing my non-idyllic past experiences of publishing
+JVM artifacts, a [colleague](https://twitter.com/cal_fern) introduced me
+to [Jitpack](https://jitpack.io/), which integrates nicely
+with Git repositories hosted on  GitHub or BitBucket, making the publishing process
+much simpler.
 
 While this article focuses on building Scala artifacts with
-SBT, I'd encourage anyone publishing any type of JVM artifacts to
-give Jitpack a try.
-
-TODO: supported build systems currently are:
+SBT, I'd encourage anyone publishing JVM artifacts to
+give JitPack a try; at the time of this writing, JitPack currently
+can build Gradle, Maven, SBT, and Leiningen projects. We'll be
+looking at SBT, which is a Scala-oriented build tool, but it
+also supports other languages.
 
 ## Immutability
 
-TODO: talk about why it is a good thing (leftmap ref?)
+One argument against just using git repository services, such as GitHub, for distributing
+artifacts or code for production builds is that no guarantees for the preservation
+of artifacts exist; a version could be updated, a branch removed,
+or an entire repository deleted.
+
+A famous example of this in recent history occurred with NPM, which is an actual package
+repository rather than a code repository service. In this case, a (perhaps rightfully)
+disgruntled developer removed all of his packages from NPM,
+[wreaking havoc](https://www.theregister.com/2016/03/23/npm_left_pad_chaos/).
+Whether or not we agree with the developer's motivations, most of us can probably
+agree that we don't want to be subject to the consequences of such actions.
+
+JitPack [takes an approach](https://jitpack.io/docs/#immutable-artifacts)
+allowing for a mutable grace period of 7 days, after which the artifacts for
+that version become immutable. For me, this hits a sweet spot, and I feel
+like it is in line with the general vibe of JitPack. Still, they recommend to
+simply publish new artifacts most of the time, and since it is so easy to do so
+with JitPack, why not!
 
 ## Scala Versions in the artifact Path
 
-If you are doing
+If you are publishing Scala artifacts, the Scala version needs to be correctly integrated
+into the artifact name. For instance, for Scala 2.13.X, we would want an artifact that
+looks like `zio-diffx_2.13-0.0.4.jar`, not `zio-diffx-0.0.4.jar`. This will also show up
+in the URL path, e.g.
+[https://jitpack.io/io/github/bbarker/zio-diffx_2.13/0.0.4/](https://jitpack.io/io/github/bbarker/zio-diffx_2.13/0.0.4/).
+
+In order to achieve this with JitPack, we need to instruct JitPack that we're
+publishing with SBT. We do this by creating `jitpack.yml` in the root of our repository,
+with contents like:
+
+```yaml
+install:
+  - sbt -v +publishM2
+```
+
+I like to keep the `-v` (for "verbose") to make sure settings are
+being correctly applied if something goes wrong.
+It isn't clear to me what the process would be if publishing Scala
+artifacts with other build tools - if you try it, let me know!
 
 ## SBT Memory issues
 
 Despite the [Jitpack SBT docs](https://jitpack.io/docs/BUILDING/#sbt-projects),
-implying otherwise, `env`, this seems to be outdated. At least, it didn't work for me (the resulting `build.log`):
+implying otherwise, using `env` in `jitpack.yml` seems to be outdated.
+At least, it didn't work for me (the resulting `build.log`):
 
 ```
 Build starting...
@@ -47,15 +85,6 @@ made the changes I wanted, in this case, just adding an option for
 -J-XX:ReservedCodeCacheSize=128m
 -J-XX:MaxMetaspaceSize=512m
 ```
-
-`jitpack.yml` is now just (I like to keep `-v` there to make sure settings are
-being correctly applied if something goes wrong):
-
-```
-install:
-  - sbt -v +publishM2
-```
-
 
 In another project that depends on zio-diffx, I add the dependency to SBT in
 the usual way, in this case (it is a test dependency, otherwise you would omit `% Test`):
