@@ -31,8 +31,8 @@ agree that we don't want to be subject to the consequences of such actions.
 JitPack [takes an approach](https://jitpack.io/docs/#immutable-artifacts)
 allowing for a mutable grace period of 7 days, after which the artifacts for
 that version become immutable. For me, this hits a sweet spot, and I feel
-like it is in line with the general vibe of JitPack. Still, they recommend to
-simply publish new artifacts most of the time, and since it is so easy to do so
+like it is in line with the general vibe of JitPack. Still, they recommend
+publishing new artifacts most of the time, and since it is so easy to do so
 with JitPack, why not!
 
 ## Scala Versions in the artifact Path
@@ -75,7 +75,7 @@ root directory. I noticed when running `sbt -v`, which displays various
 JVM options, that they were all reset when using `.sbtopts` even when
 they weren't specified in `.sbtopts`. So I copied these defaults and then
 made the changes I wanted, in this case, just adding an option for
-`-XX:MaxMetaspaceSize`. This resulted in the following content for my
+`-XX:MaxMetaspaceSize`. Altogether, this resulted in the following content for my
 `.sbtopts`:
 
 ```
